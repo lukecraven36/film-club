@@ -1136,9 +1136,117 @@ async function loadProfile() {
       <div class="xs muted" style="margin-bottom:10px">Admin tools</div>
       <button class="btn btn-surface btn-full" style="margin-bottom:8px" onclick="openAddPastPick()">＋ Add a past pick</button>
     </div>` : ''}
-    <div style="padding:20px 16px">
+    <div style="padding:20px 16px 0">
+      <div class="xs muted" style="margin-bottom:10px">Account</div>
+      <button class="btn btn-surface btn-full" style="margin-bottom:8px" onclick="openChangePIN()">🔒 Change PIN</button>
+    </div>
+    <div style="padding:12px 16px 20px">
       <button class="btn btn-ghost btn-full" onclick="signOut()" style="color:var(--red)">Sign out</button>
     </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  CHANGE PIN
+// ═══════════════════════════════════════════
+let changePinStage = 'new';
+let newPinEntry = '';
+let confirmPinEntry = '';
+
+function openChangePIN() {
+  changePinStage = 'new';
+  newPinEntry = '';
+  confirmPinEntry = '';
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">Change PIN</div>
+    <div id="pin-change-prompt" class="dim small" style="text-align:center;margin-bottom:4px">Enter your new 4-digit PIN</div>
+    <div class="pin-dots" id="pin-change-dots" style="justify-content:center;margin:16px 0 12px">
+      <div class="pin-dot" id="cd0"></div>
+      <div class="pin-dot" id="cd1"></div>
+      <div class="pin-dot" id="cd2"></div>
+      <div class="pin-dot" id="cd3"></div>
+    </div>
+    <div id="pin-change-error" style="text-align:center;min-height:18px;color:var(--red);font-size:13px;margin-bottom:4px"></div>
+    <div class="numpad" style="max-width:280px;margin:0 auto" id="pin-change-numpad"></div>
+    <button class="btn btn-ghost btn-full btn-sm" style="margin-top:16px" onclick="closeModal()">Cancel</button>`);
+  renderChangePinNumpad();
+}
+
+function renderChangePinNumpad() {
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  document.getElementById('pin-change-numpad').innerHTML = keys.map(k => {
+    if (k === '') return `<div class="numpad-key empty"></div>`;
+    if (k === '⌫') return `<div class="numpad-key del" onclick="changePinBack()">⌫</div>`;
+    return `<div class="numpad-key" onclick="changePinPress('${k}')">${k}</div>`;
+  }).join('');
+}
+
+function changePinPress(digit) {
+  if (changePinStage === 'new') {
+    if (newPinEntry.length >= 4) return;
+    newPinEntry += digit;
+    updateChangePinDots(newPinEntry.length);
+    if (newPinEntry.length === 4) setTimeout(() => {
+      changePinStage = 'confirm';
+      confirmPinEntry = '';
+      document.getElementById('pin-change-prompt').textContent = 'Confirm your new PIN';
+      updateChangePinDots(0);
+    }, 150);
+  } else {
+    if (confirmPinEntry.length >= 4) return;
+    confirmPinEntry += digit;
+    updateChangePinDots(confirmPinEntry.length);
+    if (confirmPinEntry.length === 4) setTimeout(saveNewPIN, 150);
+  }
+}
+
+function changePinBack() {
+  if (changePinStage === 'new') {
+    newPinEntry = newPinEntry.slice(0, -1);
+    updateChangePinDots(newPinEntry.length);
+  } else {
+    confirmPinEntry = confirmPinEntry.slice(0, -1);
+    updateChangePinDots(confirmPinEntry.length);
+  }
+  const el = document.getElementById('pin-change-error');
+  if (el) el.textContent = '';
+}
+
+function updateChangePinDots(filled, state = 'normal') {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('cd' + i);
+    if (!d) return;
+    d.className = 'pin-dot';
+    if (state === 'error') d.classList.add('error');
+    else if (i < filled) d.classList.add('filled');
+  }
+}
+
+async function saveNewPIN() {
+  if (newPinEntry !== confirmPinEntry) {
+    const el = document.getElementById('pin-change-error');
+    if (el) el.textContent = "PINs don't match — try again";
+    updateChangePinDots(0, 'error');
+    setTimeout(() => {
+      changePinStage = 'new';
+      newPinEntry = '';
+      confirmPinEntry = '';
+      updateChangePinDots(0);
+      const prompt = document.getElementById('pin-change-prompt');
+      if (prompt) prompt.textContent = 'Enter your new 4-digit PIN';
+      const err = document.getElementById('pin-change-error');
+      if (err) err.textContent = '';
+    }, 900);
+    return;
+  }
+  const { error } = await sb.auth.updateUser({ password: newPinEntry });
+  if (error) {
+    const el = document.getElementById('pin-change-error');
+    if (el) el.textContent = 'Error: ' + error.message;
+    return;
+  }
+  closeModal();
+  toast('PIN updated ✓');
 }
 
 async function signOut() {
