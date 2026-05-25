@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Film Club">
+<meta name="theme-color" content="#0c0c0c">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Film Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #0c0c0c;
+  --bg2: #111;
+  --surface: #181818;
+  --surface2: #222;
+  --border: #2c2c2c;
+  --border2: #383838;
+  --gold: #d4a843;
+  --gold-l: #e8c06a;
+  --gold-d: #8a6820;
+  --text: #f2ede6;
+  --text2: #b0a99e;
+  --muted: #6b6460;
+  --red: #c95555;
+  --green: #5a9e6e;
+  --r: 12px;
+  --r-sm: 8px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+body { min-height: 100dvh; padding-bottom: calc(env(safe-area-inset-bottom) + 56px); }
+
+/* ── TYPOGRAPHY ── */
+.serif { font-family: 'Playfair Display', Georgia, serif; }
+.gold { color: var(--gold); }
+.muted { color: var(--muted); }
+.dim { color: var(--text2); }
+.small { font-size: 13px; }
+.xs { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; font-weight: 600; }
+.bold { font-weight: 600; }
+
+/* ── LAYOUT ── */
+.screen { display: none; }
+.screen.active { display: block; }
+#main-wrap { max-width: 480px; margin: 0 auto; }
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  padding: 12px 16px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.topbar-logo { font-family: 'Playfair Display', serif; font-size: 19px; letter-spacing: -.02em; }
+.topbar-logo span { color: var(--gold); }
+.topbar-right { display: flex; gap: 6px; align-items: center; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; z-index: 40;
+  background: rgba(12,12,12,.95); border-top: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 8px 8px; background: none; border: none; color: var(--muted);
+  font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 500;
+  letter-spacing: .04em; text-transform: uppercase; cursor: pointer;
+  transition: color .15s; position: relative;
+}
+.nav-btn.active { color: var(--gold); }
+.nav-btn svg { width: 22px; height: 22px; }
+.nav-dot {
+  position: absolute; top: 8px; right: calc(50% - 14px);
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--gold); display: none;
+}
+.nav-dot.show { display: block; }
+
+/* ── BUTTONS ── */
+button { font-family: 'Outfit', sans-serif; cursor: pointer; border: none; background: none; color: inherit; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px 22px; border-radius: var(--r-sm);
+  font-size: 14px; font-weight: 600; font-family: 'Outfit', sans-serif;
+  transition: opacity .12s, transform .1s; user-select: none; cursor: pointer;
+  letter-spacing: .01em;
+}
+.btn:active { transform: scale(.96); }
+.btn:disabled { opacity: .35; pointer-events: none; }
+.btn-gold { background: var(--gold); color: #0c0c0c; }
+.btn-gold:hover { background: var(--gold-l); }
+.btn-surface { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+.btn-surface:hover { background: var(--border); }
+.btn-ghost { background: transparent; color: var(--text2); }
+.btn-ghost:hover { color: var(--text); }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-sm { padding: 8px 14px; font-size: 13px; }
+.btn-icon { padding: 8px; border-radius: 50%; background: var(--surface2); }
+.btn-full { width: 100%; }
+
+/* ── INPUTS ── */
+input[type=text], input[type=email], input[type=search], textarea, select {
+  font-family: 'Outfit', sans-serif; font-size: 15px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); border-radius: var(--r-sm); padding: 11px 14px;
+  width: 100%; transition: border-color .15s; outline: none; appearance: none;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+input::placeholder, textarea::placeholder { color: var(--muted); }
+textarea { resize: none; line-height: 1.55; }
+select option { background: var(--surface2); }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+
+/* ── RANGE SLIDER ── */
+input[type=range] {
+  -webkit-appearance: none; appearance: none; background: none; border: none;
+  padding: 0; width: 100%; height: 20px; cursor: pointer;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px; background: var(--border2);
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--gold); margin-top: -10px; box-shadow: 0 0 0 4px rgba(212,168,67,.15);
+}
+input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--border2); }
+input[type=range]::-moz-range-thumb {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--gold); border: none;
+}
+
+/* ── PIN DOTS ── */
+.pin-dots { display: flex; gap: 14px; justify-content: center; margin: 24px 0 20px; }
+.pin-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--border2); background: var(--surface2);
+  transition: background .15s, border-color .15s;
+}
+.pin-dot.filled { background: var(--gold); border-color: var(--gold); }
+.pin-dot.error { background: var(--red); border-color: var(--red); }
+.numpad {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  max-width: 280px; margin: 0 auto;
+}
+.numpad-key {
+  aspect-ratio: 1; border-radius: 50%; background: var(--surface2);
+  border: 1px solid var(--border); font-size: 22px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .1s, transform .1s; user-select: none;
+}
+.numpad-key:active { transform: scale(.92); background: var(--border2); }
+.numpad-key.del { font-size: 18px; color: var(--text2); }
+.numpad-key.empty { background: none; border: none; pointer-events: none; }
+
+/* ── CARDS ── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.card-p { padding: 16px; }
+
+/* ── MOVIE POSTER CARD ── */
+.movie-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); overflow: hidden; cursor: pointer;
+  transition: border-color .18s, transform .15s;
+}
+.movie-card:active { transform: scale(.97); }
+.movie-card:hover { border-color: var(--gold-d); }
+.movie-card .score-bar {
+  background: var(--gold); color: #0c0c0c;
+  padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; font-weight: 700;
+}
+.movie-card .score-bar.none { background: var(--surface2); color: var(--muted); }
+.movie-card .poster { aspect-ratio: 2/3; background: var(--surface2); }
+.movie-card .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.movie-card .info { padding: 10px; }
+.movie-card .info .title { font-family: 'Playfair Display', serif; font-size: 13px; line-height: 1.3; }
+.movie-card .info .year { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* ── ACTIVE PICK HERO ── */
+.pick-hero {
+  border-radius: var(--r); overflow: hidden;
+  border: 1px solid var(--border); background: var(--surface);
+  margin: 14px 16px 0;
+}
+.pick-hero-backdrop {
+  height: 190px; background: var(--surface2);
+  background-size: cover; background-position: center top; position: relative;
+}
+.pick-hero-backdrop::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to top, var(--surface) 0%, rgba(24,24,24,.3) 60%, transparent 100%);
+}
+.pick-hero-body { padding: 0 16px 0; position: relative; }
+.pick-hero-poster {
+  width: 80px; aspect-ratio: 2/3; border-radius: 7px;
+  border: 2px solid var(--border2); overflow: hidden; background: var(--surface2);
+  margin-top: -40px; position: relative; z-index: 2; flex-shrink: 0;
+}
+.pick-hero-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ── REVIEW ROWS ── */
+.review-row {
+  padding: 14px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); margin-bottom: 8px;
+}
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: var(--gold-d); color: var(--bg); display: flex;
+  align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
+}
+
+/* ── SCORE DISPLAY ── */
+.score-big { font-family: 'Playfair Display', serif; font-size: 42px; color: var(--gold); line-height: 1; }
+
+/* ── MODAL ── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 80;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 0 8px calc(env(safe-area-inset-bottom) + 8px);
+  animation: fadein .15s ease;
+}
+@keyframes fadein { from { opacity: 0; } }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px 20px 16px 16px; width: 100%; max-width: 480px;
+  max-height: 90dvh; overflow-y: auto; padding: 20px 20px 24px;
+  animation: slideup .2s cubic-bezier(.25,.8,.25,1);
+}
+@keyframes slideup { from { transform: translateY(40px); opacity: 0; } }
+.modal-handle { width: 38px; height: 4px; border-radius: 2px; background: var(--border2); margin: -8px auto 16px; }
+.modal-title { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 18px; }
+.modal-close { position: absolute; top: 16px; right: 16px; font-size: 24px; line-height: 1; color: var(--muted); cursor: pointer; padding: 4px; }
+
+/* ── SEARCH RESULT ── */
+.search-result {
+  display: flex; gap: 12px; padding: 10px 8px; border-radius: var(--r-sm);
+  cursor: pointer; transition: background .1s; align-items: flex-start;
+}
+.search-result:hover { background: var(--surface2); }
+.search-result .thumb { width: 42px; flex-shrink: 0; aspect-ratio: 2/3; border-radius: 4px; overflow: hidden; background: var(--surface2); }
+.search-result .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ── NOTIFICATION ── */
+.notif-item {
+  padding: 13px 14px; border-radius: var(--r-sm);
+  border-left: 3px solid var(--gold); background: var(--surface2);
+  margin-bottom: 8px; font-size: 14px; line-height: 1.45;
+}
+.notif-item.read { border-left-color: var(--border2); opacity: .65; }
+
+/* ── TOAST ── */
+.toast-wrap { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 200; width: calc(100% - 32px); max-width: 440px; pointer-events: none; }
+.toast {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--r-sm); padding: 12px 16px; font-size: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5); animation: slidedown .2s ease;
+  border-left: 3px solid var(--gold); margin-bottom: 8px;
+}
+.toast.err { border-left-color: var(--red); }
+@keyframes slidedown { from { transform: translateY(-20px); opacity: 0; } }
+
+/* ── MISC ── */
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: var(--surface2); border: 1px solid var(--border2); }
+.pill-gold { background: rgba(212,168,67,.12); border-color: var(--gold-d); color: var(--gold); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.section-title { font-family: 'Playfair Display', serif; font-size: 20px; padding: 20px 16px 12px; }
+.spinner { width: 22px; height: 22px; border: 2px solid var(--border2); border-top-color: var(--gold); border-radius: 50%; animation: spin .65s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.center-spin { display: flex; justify-content: center; align-items: center; padding: 50px 0; }
+.empty { text-align: center; color: var(--muted); padding: 48px 0; font-size: 14px; }
+.hidden { display: none !important; }
+.flex { display: flex; }
+.col { flex-direction: column; }
+.gap1 { gap: 8px; }
+.gap2 { gap: 14px; }
+.between { justify-content: space-between; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.flex1 { flex: 1; }
+
+/* ── LOGIN SCREEN ── */
+#screen-login {
+  min-height: 100dvh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 24px;
+}
+.login-mark { text-align: center; margin-bottom: 40px; }
+.login-mark .icon { font-size: 52px; line-height: 1; }
+.login-mark h1 { font-family: 'Playfair Display', serif; font-size: 34px; margin-top: 8px; }
+.login-mark p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+.user-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 320px; margin-bottom: 28px; }
+.user-chip {
+  padding: 16px; border-radius: var(--r); background: var(--surface);
+  border: 2px solid var(--border); text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.user-chip:hover { border-color: var(--gold-d); background: var(--surface2); }
+.user-chip.selected { border-color: var(--gold); background: rgba(212,168,67,.08); }
+.user-chip .initial {
+  width: 44px; height: 44px; border-radius: 50%; background: var(--gold-d);
+  color: var(--bg); font-size: 18px; font-weight: 700; margin: 0 auto 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.user-chip .uname { font-size: 14px; font-weight: 600; }
+.pin-area { width: 100%; max-width: 320px; text-align: center; }
+.pin-prompt { font-size: 14px; color: var(--text2); margin-bottom: 4px; }
+.pin-error { color: var(--red); font-size: 13px; height: 18px; margin-bottom: 4px; }
+
+/* ── HOME SCREEN ── */
+#screen-home { padding-bottom: 8px; }
+.turn-card {
+  margin: 14px 16px 0; padding: 18px;
+  background: linear-gradient(135deg, rgba(212,168,67,.12) 0%, rgba(212,168,67,.04) 100%);
+  border: 1px solid var(--gold-d); border-radius: var(--r);
+  text-align: center;
+}
+.turn-card .who { font-family: 'Playfair Display', serif; font-size: 22px; margin-top: 4px; }
+.pick-btn-wrap { margin: 12px 16px 0; }
+
+/* ── ROTATION ── */
+.rotation-row {
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm);
+  margin-bottom: 6px;
+}
+.rotation-row.current { border-color: var(--gold-d); background: rgba(212,168,67,.06); }
+
+/* ── HISTORY ── */
+#screen-history { padding-bottom: 8px; }
+#history-search-wrap { padding: 12px 16px 0; }
+
+/* ── NOTIFICATIONS ── */
+#screen-notifs { padding-bottom: 8px; }
+
+/* ── PROFILE ── */
+#screen-profile { padding-bottom: 8px; }
+.profile-header {
+  padding: 24px 16px 20px; text-align: center; border-bottom: 1px solid var(--border);
+}
+.profile-avatar {
+  width: 72px; height: 72px; border-radius: 50%; background: var(--gold-d);
+  color: var(--bg); font-size: 28px; font-weight: 700; margin: 0 auto 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.profile-name { font-family: 'Playfair Display', serif; font-size: 26px; }
+.profile-stats { display: flex; gap: 0; border-top: 1px solid var(--border); }
+.stat { flex: 1; padding: 16px; text-align: center; border-right: 1px solid var(--border); }
+.stat:last-child { border-right: none; }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--gold); }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; margin-top: 2px; }
+
+/* ── PICK FLOW ── */
+.pick-flow-hero {
+  text-align: center; padding: 32px 20px 20px; border-bottom: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-mark">
+    <div class="icon">🎬</div>
+    <h1>Film Club</h1>
+    <p>Luke · Rowan · Nikki · Lucy</p>
+  </div>
+
+  <div id="step-pick-user">
+    <div class="user-picker" id="user-picker"></div>
+  </div>
+
+  <div id="step-pin" class="hidden pin-area">
+    <div class="pin-prompt" id="pin-prompt">Enter your PIN</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+    <div class="numpad" id="numpad"></div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:20px" onclick="backToUserPick()">← Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN APP ═══════════════ -->
+<div id="screen-app" class="hidden">
+  <div id="main-wrap">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-logo serif">Film<span>&nbsp;Club</span></div>
+      <div class="topbar-right">
+        <div style="position:relative">
+          <button class="btn-icon" onclick="goScreen('notifs')" title="Notifications" style="font-size:18px;display:flex;align-items:center">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </button>
+          <div class="nav-dot" id="topbar-notif-dot"></div>
+        </div>
+        <button class="btn-icon" onclick="goScreen('profile')" title="Profile" style="font-size:18px;display:flex;align-items:center">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREENS -->
+    <div id="screen-home" class="screen active"></div>
+    <div id="screen-history" class="screen hidden"></div>
+    <div id="screen-notifs" class="screen hidden"></div>
+    <div id="screen-profile" class="screen hidden"></div>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" id="nav-home" onclick="goScreen('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        This Week
+      </button>
+      <button class="nav-btn" id="nav-history" onclick="goScreen('history')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        History
+      </button>
+      <button class="nav-btn" id="nav-notifs" onclick="goScreen('notifs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="nav-dot" id="nav-notif-dot"></div>
+        Alerts
+      </button>
+    </nav>
+  </div>
+</div>
+
+<!-- MODAL CONTAINER -->
+<div id="modal-container"></div>
+<!-- TOAST -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG — update with your new Supabase project credentials
+// ═══════════════════════════════════════════
+const SB_URL  = 'https://dfxcaccnjseczjpmmjry.supabase.co';
+const SB_ANON = 'sb_publishable_0HDCkatJBEx67dDy2lk_1A_EmyX-KxY';
+const TMDB_PROXY_URL = 'https://lccjlxldwkvihpwbvveh.supabase.co/functions/v1/tmdb'; // keep using old TMDB edge function
+const TMDB_PROXY_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjY2pseGxkd2t2aWhwd2J2dmVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDgzMjMsImV4cCI6MjA5MzQyNDMyM30.6CTHJ6kFKib8lRGDTQ4FJ3A3PHQnvm_R6RE_3yqbbKU';
+
+// Members config — pick_order determines rotation
+// Emails are internal only, never shown in UI
+const MEMBERS_CONFIG = [
+  { name: 'Luke',  email: 'luke@filmclub.app',  pick_order: 0, is_admin: true },
+  { name: 'Rowan', email: 'rowan@filmclub.app', pick_order: 1, is_admin: false },
+  { name: 'Nikki', email: 'nikki@filmclub.app', pick_order: 2, is_admin: false },
+  { name: 'Lucy',  email: 'lucy@filmclub.app',  pick_order: 3, is_admin: false },
+];
+
+const sb = supabase.createClient(SB_URL, SB_ANON);
+
+// ── STATE ──
+let currentMember = null;  // { id, name, pick_order, is_admin, auth_user_id }
+let allMembers = [];
+let allPicks = [];
+let activePick = null;
+let currentScreen = 'home';
+
+// ── PIN ENTRY STATE ──
+let selectedMemberConfig = null;
+let pinEntry = '';
+
+// ═══════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════
+async function boot() {
+  // Check existing session
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    const { data: member } = await sb.from('members')
+      .select('*').eq('auth_user_id', session.user.id).maybeSingle();
+    if (member) { await signedIn(member); return; }
+  }
+  renderUserPicker();
+  document.getElementById('screen-login').classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+//  LOGIN FLOW
+// ═══════════════════════════════════════════
+function renderUserPicker() {
+  const wrap = document.getElementById('user-picker');
+  wrap.innerHTML = MEMBERS_CONFIG.map(m => `
+    <div class="user-chip" onclick="selectUser('${m.name}')">
+      <div class="initial">${m.name[0]}</div>
+      <div class="uname">${m.name}</div>
+    </div>`).join('');
+}
+
+function selectUser(name) {
+  selectedMemberConfig = MEMBERS_CONFIG.find(m => m.name === name);
+  pinEntry = '';
+  updatePinDots();
+  document.getElementById('pin-prompt').textContent = `Hi ${name} — enter your PIN`;
+  document.getElementById('pin-error').textContent = '';
+  hide('step-pick-user'); show('step-pin');
+  renderNumpad();
+}
+
+function backToUserPick() {
+  pinEntry = '';
+  hide('step-pin'); show('step-pick-user');
+}
+
+function renderNumpad() {
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  document.getElementById('numpad').innerHTML = keys.map((k, i) => {
+    if (k === '') return `<div class="numpad-key empty"></div>`;
+    if (k === '⌫') return `<div class="numpad-key del" onclick="pinBack()">⌫</div>`;
+    return `<div class="numpad-key" onclick="pinPress('${k}')">${k}</div>`;
+  }).join('');
+}
+
+function pinPress(digit) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += digit;
+  updatePinDots();
+  if (pinEntry.length === 4) setTimeout(attemptLogin, 120);
+}
+
+function pinBack() {
+  pinEntry = pinEntry.slice(0, -1);
+  updatePinDots();
+  document.getElementById('pin-error').textContent = '';
+}
+
+function updatePinDots(state = 'normal') {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById(`d${i}`);
+    d.className = 'pin-dot';
+    if (state === 'error') d.classList.add('error');
+    else if (i < pinEntry.length) d.classList.add('filled');
+  }
+}
+
+async function attemptLogin() {
+  const { email } = selectedMemberConfig;
+  // Use PIN as password directly (Supabase handles auth, PIN is the password)
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pinEntry });
+  if (error) {
+    document.getElementById('pin-error').textContent = 'Wrong PIN — try again';
+    updatePinDots('error');
+    setTimeout(() => { pinEntry = ''; updatePinDots(); document.getElementById('pin-error').textContent = ''; }, 800);
+    return;
+  }
+  const { data: member } = await sb.from('members')
+    .select('*').eq('auth_user_id', data.user.id).maybeSingle();
+  if (!member) { toast('Account not set up yet', true); return; }
+  await signedIn(member);
+}
+
+async function signedIn(member) {
+  currentMember = member;
+  hide('screen-login');
+  show('screen-app');
+  document.getElementById('screen-login').classList.remove('active');
+  await loadAllMembers();
+  loadHome();
+  loadNotifCount();
+  registerServiceWorker();
+}
+
+// ═══════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════
+async function loadAllMembers() {
+  const { data } = await sb.from('members').select('*').order('pick_order');
+  allMembers = data || [];
+}
+
+async function loadPicks() {
+  const { data } = await sb.from('picks')
+    .select('*, movies(*), members!picker_id(*), reviews(score, member_id)')
+    .order('picked_at', { ascending: false });
+  allPicks = data || [];
+  activePick = allPicks.find(p => p.status === 'active') || null;
+}
+
+// ═══════════════════════════════════════════
+//  HOME SCREEN
+// ═══════════════════════════════════════════
+async function loadHome() {
+  const el = document.getElementById('screen-home');
+  el.innerHTML = '<div class="center-spin"><div class="spinner"></div></div>';
+  await loadPicks();
+  renderHome();
+}
+
+function renderHome() {
+  const el = document.getElementById('screen-home');
+  const completedCount = allPicks.filter(p => p.status === 'completed').length;
+  const turnIdx = allMembers.length ? completedCount % allMembers.length : 0;
+  const nextPicker = allMembers[turnIdx];
+  const isMyTurn = !activePick && nextPicker?.id === currentMember?.id;
+  const isAdmin = currentMember?.is_admin;
+
+  let html = '';
+
+  if (activePick) {
+    html += renderActivePick(activePick);
+  } else {
+    const name = nextPicker?.name || '...';
+    html += `<div class="turn-card" style="margin:14px 16px 0">
+      <div class="xs muted">This week's pick</div>
+      <div class="who">${isMyTurn ? "It's your turn! 🎬" : `It's <span class="gold">${name}</span>'s turn`}</div>
+      ${isMyTurn ? '' : '<div class="small dim" style="margin-top:6px">Waiting for them to choose…</div>'}
+    </div>`;
+    if (isMyTurn) {
+      html += `<div class="pick-btn-wrap"><button class="btn btn-gold btn-full" onclick="openPickMovie()" style="margin-top:0">Choose this week's film</button></div>`;
+    }
+  }
+
+  // Rotation
+  html += `<div class="section-title">Pick rotation</div><div style="padding:0 16px">`;
+  allMembers.forEach((m, i) => {
+    const isCurrent = activePick ? m.id === activePick.picker_id : m.id === nextPicker?.id;
+    const isMe = m.id === currentMember?.id;
+    html += `<div class="rotation-row ${isCurrent ? 'current' : ''}">
+      <span class="dim small" style="width:18px">${i+1}</span>
+      <div class="avatar">${m.name[0]}</div>
+      <span style="flex:1;font-size:14px;font-weight:500">${m.name}${isMe ? ' <span class="dim" style="font-weight:400">(you)</span>' : ''}</span>
+      ${isCurrent ? '<span class="pill pill-gold">on deck</span>' : ''}
+    </div>`;
+  });
+  html += '</div><div style="height:24px"></div>';
+  el.innerHTML = html;
+
+  if (activePick) loadHomeReviews(activePick.id);
+}
+
+function renderActivePick(pick) {
+  const movie = pick.movies;
+  const poster = movie?.poster_path ? `https://image.tmdb.org/t/p/w342${movie.poster_path}` : null;
+  const backdrop = movie?.backdrop_path ? `https://image.tmdb.org/t/p/w780${movie.backdrop_path}` : null;
+  return `
+    <div class="pick-hero">
+      <div class="pick-hero-backdrop" ${backdrop ? `style="background-image:url(${backdrop})"` : ''}></div>
+      <div class="pick-hero-body">
+        <div class="flex gap2 items-end" style="padding-bottom:14px">
+          <div class="pick-hero-poster">${poster ? `<img src="${poster}" alt="">` : ''}</div>
+          <div style="padding-bottom:4px;flex:1">
+            <div class="xs muted" style="margin-bottom:4px">This week · ${pick.members?.name || ''}</div>
+            <div class="serif" style="font-size:22px;line-height:1.2">${esc(movie?.title||'')}</div>
+            <div class="small dim" style="margin-top:4px">${[movie?.release_year, ...(movie?.genres||[]).slice(0,2)].filter(Boolean).join(' · ')}</div>
+          </div>
+        </div>
+      </div>
+      <div id="home-review-form" style="padding:0 16px 16px;border-top:1px solid var(--border)"></div>
+      <div id="home-all-reviews" style="padding:0 16px 16px"></div>
+    </div>`;
+}
+
+async function loadHomeReviews(pickId) {
+  const { data: reviews } = await sb.from('reviews')
+    .select('*, members(name)').eq('pick_id', pickId);
+  const rws = reviews || [];
+  renderHomeReviewForm(pickId, rws);
+  renderHomeAllReviews(rws);
+}
+
+function renderHomeReviewForm(pickId, reviews) {
+  const el = document.getElementById('home-review-form');
+  if (!el) return;
+  const mine = reviews.find(r => r.member_id === currentMember.id);
+  const score = mine ? Number(mine.score) : 7;
+  const text = mine?.review_text || '';
+  el.innerHTML = `
+    <div style="padding-top:14px">
+      <div class="xs muted" style="margin-bottom:10px">${mine ? 'Your review' : 'Add your review'}</div>
+      <div class="flex between items-center" style="margin-bottom:6px">
+        <span class="small dim">Score</span>
+        <span class="score-big" style="font-size:36px" id="h-score-disp">${score.toFixed(1)}</span>
+      </div>
+      <input type="range" min="0" max="10" step="0.5" value="${score}" id="h-score-range"
+        oninput="document.getElementById('h-score-disp').textContent=parseFloat(this.value).toFixed(1)">
+      <textarea id="h-review-text" rows="3" placeholder="What did you think?" style="margin-top:12px">${esc(text)}</textarea>
+      <button class="btn btn-gold btn-full" style="margin-top:10px" onclick="submitHomeReview('${pickId}','${mine?.id||''}')">${mine ? 'Update review' : 'Submit review'}</button>
+    </div>`;
+}
+
+function renderHomeAllReviews(reviews) {
+  const el = document.getElementById('home-all-reviews');
+  if (!el) return;
+  const allReviewed = allMembers.length > 0 && reviews.length >= allMembers.length;
+  el.innerHTML = `<div class="xs muted" style="margin-bottom:10px">Club reviews (${reviews.length}/${allMembers.length})</div>`;
+  if (!reviews.length) { el.innerHTML += '<div class="small dim">No reviews yet.</div>'; }
+  reviews.forEach(r => {
+    const name = r.members?.name || '?';
+    el.innerHTML += `<div class="review-row flex gap2 items-start">
+      <div class="avatar">${name[0]}</div>
+      <div style="flex:1">
+        <div class="flex between items-center">
+          <span style="font-size:14px;font-weight:600">${name}</span>
+          <span class="gold bold" style="font-size:18px">${Number(r.score).toFixed(1)}</span>
+        </div>
+        ${r.review_text ? `<div class="small dim" style="margin-top:4px;line-height:1.55">${esc(r.review_text)}</div>` : ''}
+      </div>
+    </div>`;
+  });
+  if (allReviewed && currentMember?.is_admin) {
+    el.innerHTML += `<button class="btn btn-surface btn-full btn-sm" style="margin-top:10px" onclick="closeWeek()">Everyone's reviewed — close the week ✓</button>`;
+  }
+}
+
+async function submitHomeReview(pickId) {
+  const score = parseFloat(document.getElementById('h-score-range').value);
+  const text = document.getElementById('h-review-text').value.trim();
+  const { error } = await sb.from('reviews').upsert(
+    { pick_id: pickId, member_id: currentMember.id, score, review_text: text },
+    { onConflict: 'pick_id,member_id' }
+  );
+  if (error) return toast('Error: ' + error.message, true);
+  toast('Review saved ✓');
+  // Notify others
+  const others = allMembers.filter(m => m.id !== currentMember.id);
+  await notifyMembers(others, 'review',
+    `${currentMember.name} reviewed ${activePick?.movies?.title || 'the film'}`,
+    `Score: ${score.toFixed(1)}/10`);
+  await loadHomeReviews(pickId);
+}
+
+async function closeWeek() {
+  if (!confirm('Close this week and move to the next picker?')) return;
+  const { error } = await sb.from('picks').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', activePick.id);
+  if (error) return toast('Error: ' + error.message, true);
+  toast('Week closed ✓');
+  await loadHome();
+}
+
+// ═══════════════════════════════════════════
+//  PICK MOVIE
+// ═══════════════════════════════════════════
+function openPickMovie() {
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">Choose this week's film</div>
+    <div class="field">
+      <input type="search" id="tmdb-q" placeholder="Search by title…" oninput="debounceTmdb(this.value)" autocomplete="off" autofocus>
+    </div>
+    <div id="tmdb-res"></div>`);
+}
+
+let tmdbTimer = null;
+function debounceTmdb(q) {
+  clearTimeout(tmdbTimer);
+  if (!q.trim()) { document.getElementById('tmdb-res').innerHTML = ''; return; }
+  tmdbTimer = setTimeout(() => doTmdbSearch(q), 320);
+}
+
+async function doTmdbSearch(q) {
+  const el = document.getElementById('tmdb-res');
+  if (!el) return;
+  el.innerHTML = '<div class="center-spin" style="padding:16px 0"><div class="spinner"></div></div>';
+  const res = await fetch(`${TMDB_PROXY_URL}?action=search&q=${encodeURIComponent(q)}`,
+    { headers: { Authorization: `Bearer ${TMDB_PROXY_KEY}`, apikey: TMDB_PROXY_KEY } });
+  const json = await res.json();
+  const results = json.results || [];
+  if (!results.length) { el.innerHTML = '<div class="empty" style="padding:20px 0">No results.</div>'; return; }
+  el.innerHTML = results.slice(0,8).map(r => {
+    const thumb = r.poster_path ? `https://image.tmdb.org/t/p/w92${r.poster_path}` : null;
+    return `<div class="search-result" onclick='confirmPickMovie(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
+      <div class="thumb">${thumb ? `<img src="${thumb}" alt="">` : ''}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;line-height:1.3">${esc(r.title)}</div>
+        <div class="small dim">${r.release_year||''}</div>
+        ${r.overview ? `<div class="small dim" style="margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(r.overview)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function confirmPickMovie(result) {
+  closeModal();
+  const poster = result.poster_path ? `https://image.tmdb.org/t/p/w342${result.poster_path}` : null;
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="pick-flow-hero">
+      ${poster ? `<img src="${poster}" style="width:90px;border-radius:8px;margin-bottom:12px" alt="">` : ''}
+      <div class="serif" style="font-size:20px">${esc(result.title)}</div>
+      <div class="dim small" style="margin-top:4px">${result.release_year||''}</div>
+    </div>
+    <div style="padding:20px 0 0">
+      <p class="dim small" style="text-align:center;margin-bottom:16px">Pick this film for this week?</p>
+      <div class="flex gap1">
+        <button class="btn btn-surface flex1" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-gold" style="flex:2" onclick='doPickMovie(${JSON.stringify(result).replace(/'/g,"&#39;")})'>Yes, pick it 🎬</button>
+      </div>
+    </div>`);
+}
+
+async function doPickMovie(result) {
+  closeModal();
+  // Fetch full details from TMDB
+  const res = await fetch(`${TMDB_PROXY_URL}?action=details&tmdb_id=${result.tmdb_id}`,
+    { headers: { Authorization: `Bearer ${TMDB_PROXY_KEY}`, apikey: TMDB_PROXY_KEY } });
+  const details = await res.json();
+
+  // Upsert movie
+  let movieId;
+  const { data: existing } = await sb.from('movies').select('id').eq('tmdb_id', details.tmdb_id).maybeSingle();
+  if (existing) { movieId = existing.id; }
+  else {
+    const { data: ins } = await sb.from('movies').insert({
+      tmdb_id: details.tmdb_id, title: details.title, release_year: details.release_year,
+      poster_path: details.poster_path, backdrop_path: details.backdrop_path,
+      overview: details.overview, runtime: details.runtime, genres: details.genres,
+      director: details.director, tmdb_vote_average: details.tmdb_vote_average
+    }).select('id').single();
+    movieId = ins?.id;
+  }
+
+  // Create pick
+  const { error } = await sb.from('picks').insert({
+    movie_id: movieId, picker_id: currentMember.id, status: 'active'
+  });
+  if (error) return toast('Error: ' + error.message, true);
+
+  // Notify
+  const others = allMembers.filter(m => m.id !== currentMember.id);
+  await notifyMembers(others, 'pick',
+    `${currentMember.name} picked ${details.title} 🎬`,
+    'This week\'s film has been chosen!');
+
+  toast(`${details.title} — it's this week's pick! 🎬`);
+  await loadHome();
+}
+
+// ═══════════════════════════════════════════
+//  HISTORY
+// ═══════════════════════════════════════════
+async function loadHistory() {
+  const el = document.getElementById('screen-history');
+  el.innerHTML = '<div id="history-search-wrap"><input type="search" placeholder="Search films…" oninput="filterHistory(this.value)" style="width:100%"></div><div class="center-spin" style="margin-top:24px"><div class="spinner"></div></div>';
+  if (!allPicks.length) await loadPicks();
+  renderHistory(allPicks);
+}
+
+function renderHistory(picks, q = '') {
+  const el = document.getElementById('screen-history');
+  const filtered = picks.filter(p =>
+    p.status === 'completed' && (!q || p.movies?.title?.toLowerCase().includes(q.toLowerCase()))
+  );
+  const searchHtml = document.getElementById('history-search-wrap')?.outerHTML ||
+    `<div id="history-search-wrap" style="padding:12px 16px 0"><input type="search" placeholder="Search films…" oninput="filterHistory(this.value)" style="width:100%"></div>`;
+  if (!filtered.length) {
+    el.innerHTML = searchHtml + '<div class="empty">No films yet.</div>';
+    return;
+  }
+  el.innerHTML = searchHtml + `<div class="grid-3" style="padding:12px 16px;padding-bottom:24px">${filtered.map(p => {
+    const scores = (p.reviews||[]).map(r=>Number(r.score));
+    const avg = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : null;
+    const poster = p.movies?.poster_path ? `https://image.tmdb.org/t/p/w342${p.movies.poster_path}` : null;
+    return `<div class="movie-card" onclick="openMovieDetail('${p.id}')">
+      <div class="score-bar ${avg ? '' : 'none'}">
+        <span>${avg ? '★ '+avg : '—'}</span>
+        <span style="font-size:10px;font-weight:500">${scores.length}r</span>
+      </div>
+      <div class="poster">${poster ? `<img src="${poster}" alt="${p.movies?.title||''}" loading="lazy">` : ''}</div>
+      <div class="info">
+        <div class="title">${esc(p.movies?.title||'')}</div>
+        <div class="year">${p.movies?.release_year||''}</div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function filterHistory(q) { renderHistory(allPicks, q); }
+
+// ═══════════════════════════════════════════
+//  MOVIE DETAIL
+// ═══════════════════════════════════════════
+async function openMovieDetail(pickId) {
+  const pick = allPicks.find(p => p.id === pickId);
+  if (!pick) return;
+  const { data: reviews } = await sb.from('reviews').select('*, members(name)').eq('pick_id', pickId);
+  const rws = reviews || [];
+  const scores = rws.map(r=>Number(r.score));
+  const avg = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : null;
+  const movie = pick.movies;
+  const poster = movie?.poster_path ? `https://image.tmdb.org/t/p/w342${movie.poster_path}` : null;
+  const backdrop = movie?.backdrop_path ? `https://image.tmdb.org/t/p/w780${movie.backdrop_path}` : null;
+
+  let html = `
+    <div class="modal-handle"></div>
+    ${backdrop ? `<div style="height:150px;background:url(${backdrop}) center/cover;border-radius:10px;margin:-20px -20px 14px"></div>` : ''}
+    <div class="flex gap2 items-start" style="margin-bottom:14px">
+      ${poster ? `<img src="${poster}" style="width:66px;border-radius:7px;border:1px solid var(--border2);flex-shrink:0" alt="">` : ''}
+      <div>
+        <div class="serif" style="font-size:19px;line-height:1.2">${esc(movie?.title||'')}</div>
+        <div class="small dim" style="margin-top:3px">${[movie?.release_year,movie?.director].filter(Boolean).join(' · ')}</div>
+        ${avg ? `<div class="gold bold" style="font-size:20px;margin-top:4px">★ ${avg} <span class="muted" style="font-size:13px;font-weight:400">/ 10</span></div>` : ''}
+      </div>
+    </div>
+    ${movie?.overview ? `<div class="small dim" style="line-height:1.6;margin-bottom:14px">${esc(movie.overview)}</div>` : ''}
+    <div class="divider"></div>
+    <div class="xs muted" style="margin-bottom:10px">Reviews</div>`;
+
+  allMembers.forEach(m => {
+    const rev = rws.find(r=>r.member_id===m.id);
+    const isMe = m.id === currentMember.id;
+    const canEdit = isMe || currentMember.is_admin;
+    html += `<div class="review-row flex gap2 items-start">
+      <div class="avatar">${m.name[0]}</div>
+      <div style="flex:1">
+        <div class="flex between items-center">
+          <span style="font-size:14px;font-weight:600">${m.name}${isMe ? ' <span class="dim" style="font-weight:400">(you)</span>' : ''}</span>
+          ${rev ? `<span class="gold bold" style="font-size:18px">${Number(rev.score).toFixed(1)}</span>` : '<span class="dim small">No review</span>'}
+        </div>
+        ${rev?.review_text ? `<div class="small dim" style="margin-top:4px;line-height:1.55">${esc(rev.review_text)}</div>` : ''}
+        ${canEdit ? `<button class="btn btn-ghost btn-sm" style="margin-top:6px;font-size:12px;color:var(--text2)" onclick="openEditReview('${pickId}','${m.id}','${rev?.id||''}',${rev?Number(rev.score):7},${JSON.stringify(rev?.review_text||'').replace(/'/g,"&#39;")})">✏️ ${rev?'Edit':'Add'} review</button>` : ''}
+      </div>
+    </div>`;
+  });
+
+  if (currentMember.is_admin && pick.status === 'active') {
+    html += `<div class="divider"></div><button class="btn btn-surface btn-full btn-sm" onclick="adminClosePick('${pick.id}')">Close this week</button>`;
+  }
+  showModal(html);
+}
+
+function openEditReview(pickId, memberId, revId, currentScore, currentText) {
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">Edit Review</div>
+    <div class="flex between items-center" style="margin-bottom:8px">
+      <span class="small dim">Score</span>
+      <span class="score-big" id="edit-score-disp">${Number(currentScore).toFixed(1)}</span>
+    </div>
+    <input type="range" min="0" max="10" step="0.5" value="${currentScore}"
+      oninput="document.getElementById('edit-score-disp').textContent=parseFloat(this.value).toFixed(1)" id="edit-score-range">
+    <div style="margin-top:14px">
+      <textarea id="edit-review-text" rows="4" placeholder="Written review (optional)">${esc(currentText)}</textarea>
+    </div>
+    <div class="flex gap1" style="margin-top:16px">
+      <button class="btn btn-surface flex1" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" style="flex:2" onclick="saveEditedReview('${pickId}','${memberId}')">Save</button>
+    </div>`);
+}
+
+async function saveEditedReview(pickId, memberId) {
+  const score = parseFloat(document.getElementById('edit-score-range').value);
+  const text = document.getElementById('edit-review-text').value.trim();
+  const { error } = await sb.from('reviews').upsert(
+    { pick_id: pickId, member_id: memberId, score, review_text: text },
+    { onConflict: 'pick_id,member_id' }
+  );
+  if (error) return toast('Error: ' + error.message, true);
+  toast('Saved ✓');
+  closeModal();
+  await loadPicks();
+  if (currentScreen === 'home') renderHome();
+  if (currentScreen === 'history') renderHistory(allPicks);
+}
+
+async function adminClosePick(pickId) {
+  if (!confirm('Close this pick?')) return;
+  await sb.from('picks').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', pickId);
+  toast('Pick closed ✓');
+  closeModal();
+  await loadPicks();
+  renderHome();
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN — Add past pick
+// ═══════════════════════════════════════════
+function openAddPastPick() {
+  const opts = allMembers.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add Past Pick</div>
+    <div class="field">
+      <label>Who picked it?</label>
+      <select id="past-picker-id">${opts}</select>
+    </div>
+    <div class="field">
+      <label>Search TMDB</label>
+      <input type="search" id="past-q" placeholder="Film title…" oninput="debouncePast(this.value)" autocomplete="off">
+    </div>
+    <div id="past-res"></div>`);
+}
+
+let pastTimer = null;
+function debouncePast(q) {
+  clearTimeout(pastTimer);
+  if (!q.trim()) { document.getElementById('past-res').innerHTML = ''; return; }
+  pastTimer = setTimeout(() => doPastSearch(q), 320);
+}
+
+async function doPastSearch(q) {
+  const el = document.getElementById('past-res');
+  if (!el) return;
+  el.innerHTML = '<div class="center-spin" style="padding:16px 0"><div class="spinner"></div></div>';
+  const res = await fetch(`${TMDB_PROXY_URL}?action=search&q=${encodeURIComponent(q)}`,
+    { headers: { Authorization: `Bearer ${TMDB_PROXY_KEY}`, apikey: TMDB_PROXY_KEY } });
+  const json = await res.json();
+  const results = json.results || [];
+  if (!results.length) { el.innerHTML = '<div class="empty" style="padding:16px 0">No results.</div>'; return; }
+  el.innerHTML = results.slice(0,6).map(r => {
+    const thumb = r.poster_path ? `https://image.tmdb.org/t/p/w92${r.poster_path}` : null;
+    return `<div class="search-result" onclick='selectPastMovie(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
+      <div class="thumb">${thumb ? `<img src="${thumb}" alt="">` : ''}</div>
+      <div><div style="font-size:14px;font-weight:600">${esc(r.title)}</div><div class="small dim">${r.release_year||''}</div></div>
+    </div>`;
+  }).join('');
+}
+
+async function selectPastMovie(result) {
+  const pickerId = document.getElementById('past-picker-id')?.value;
+  if (!pickerId) return toast('Select a picker first', true);
+  closeModal();
+
+  const res = await fetch(`${TMDB_PROXY_URL}?action=details&tmdb_id=${result.tmdb_id}`,
+    { headers: { Authorization: `Bearer ${TMDB_PROXY_KEY}`, apikey: TMDB_PROXY_KEY } });
+  const details = await res.json();
+
+  let movieId;
+  const { data: existing } = await sb.from('movies').select('id').eq('tmdb_id', details.tmdb_id).maybeSingle();
+  if (existing) { movieId = existing.id; }
+  else {
+    const { data: ins } = await sb.from('movies').insert({
+      tmdb_id: details.tmdb_id, title: details.title, release_year: details.release_year,
+      poster_path: details.poster_path, backdrop_path: details.backdrop_path,
+      overview: details.overview, runtime: details.runtime, genres: details.genres,
+      director: details.director, tmdb_vote_average: details.tmdb_vote_average
+    }).select('id').single();
+    movieId = ins?.id;
+  }
+
+  const { error } = await sb.from('picks').insert({
+    movie_id: movieId, picker_id: pickerId, status: 'completed',
+    completed_at: new Date().toISOString()
+  });
+  if (error) return toast('Error: ' + error.message, true);
+  toast(`${details.title} added ✓`);
+  await loadPicks();
+  renderHistory(allPicks);
+}
+
+// ═══════════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════════
+async function loadNotifications() {
+  const el = document.getElementById('screen-notifs');
+  el.innerHTML = '<div class="center-spin"><div class="spinner"></div></div>';
+  const { data } = await sb.from('notifications')
+    .select('*').eq('member_id', currentMember.id)
+    .order('created_at', { ascending: false }).limit(30);
+  const notifs = data || [];
+
+  // Mark all read
+  const unread = notifs.filter(n => !n.read).map(n => n.id);
+  if (unread.length) {
+    await sb.from('notifications').update({ read: true }).in('id', unread);
+    document.getElementById('topbar-notif-dot').style.display = 'none';
+    document.getElementById('nav-notif-dot').classList.remove('show');
+  }
+
+  el.innerHTML = `<div class="section-title">Notifications</div><div style="padding:0 16px">`;
+  if (!notifs.length) { el.innerHTML += '<div class="empty">Nothing yet. Get your mates to pick and review!</div>'; }
+  notifs.forEach(n => {
+    const d = new Date(n.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+    el.innerHTML += `<div class="notif-item ${n.read ? 'read' : ''}">
+      <div style="font-weight:600;font-size:14px">${esc(n.title)}</div>
+      ${n.body ? `<div class="small dim">${esc(n.body)}</div>` : ''}
+      <div class="xs muted" style="margin-top:5px">${d}</div>
+    </div>`;
+  });
+  el.innerHTML += '</div>';
+}
+
+async function loadNotifCount() {
+  const { count } = await sb.from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('member_id', currentMember.id).eq('read', false);
+  if (count > 0) {
+    document.getElementById('topbar-notif-dot').style.display = 'block';
+    document.getElementById('nav-notif-dot').classList.add('show');
+  }
+}
+
+async function notifyMembers(members, type, title, body) {
+  if (!members.length) return;
+  await sb.from('notifications').insert(members.map(m => ({
+    member_id: m.id, type, title, body, read: false
+  })));
+}
+
+// ═══════════════════════════════════════════
+//  PROFILE SCREEN
+// ═══════════════════════════════════════════
+async function loadProfile() {
+  const el = document.getElementById('screen-profile');
+  el.innerHTML = '<div class="center-spin"><div class="spinner"></div></div>';
+  if (!allPicks.length) await loadPicks();
+
+  const myPicks = allPicks.filter(p => p.members?.id === currentMember.id || p.picker_id === currentMember.id);
+  const myReviews = await sb.from('reviews').select('score').eq('member_id', currentMember.id);
+  const scores = (myReviews.data || []).map(r => Number(r.score));
+  const avgScore = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : '—';
+
+  el.innerHTML = `
+    <div class="profile-header">
+      <div class="profile-avatar">${currentMember.name[0]}</div>
+      <div class="profile-name">${currentMember.name}</div>
+      ${currentMember.is_admin ? '<div style="margin-top:6px"><span class="pill pill-gold">Admin</span></div>' : ''}
+    </div>
+    <div class="profile-stats card" style="border-radius:0;border-left:none;border-right:none">
+      <div class="stat"><div class="stat-num">${myPicks.length}</div><div class="stat-label">Picks</div></div>
+      <div class="stat"><div class="stat-num">${scores.length}</div><div class="stat-label">Reviews</div></div>
+      <div class="stat"><div class="stat-num">${avgScore}</div><div class="stat-label">Avg score</div></div>
+    </div>
+    ${currentMember.is_admin ? `
+    <div style="padding:20px 16px 0">
+      <div class="xs muted" style="margin-bottom:10px">Admin tools</div>
+      <button class="btn btn-surface btn-full" style="margin-bottom:8px" onclick="openAddPastPick()">＋ Add a past pick</button>
+    </div>` : ''}
+    <div style="padding:20px 16px">
+      <button class="btn btn-ghost btn-full" onclick="signOut()" style="color:var(--red)">Sign out</button>
+    </div>`;
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  currentMember = null; allMembers = []; allPicks = []; activePick = null;
+  hide('screen-app'); show('screen-login');
+  document.getElementById('screen-login').classList.add('active');
+  pinEntry = ''; hide('step-pin'); show('step-pick-user');
+  renderUserPicker();
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function goScreen(name) {
+  currentScreen = name;
+  ['home','history','notifs','profile'].forEach(s => {
+    document.getElementById(`screen-${s}`)?.classList.toggle('active', s === name);
+    document.getElementById(`screen-${s}`)?.classList.toggle('hidden', s !== name);
+    document.getElementById(`nav-${s}`)?.classList.toggle('active', s === name);
+  });
+  if (name === 'home') loadHome();
+  if (name === 'history') loadHistory();
+  if (name === 'notifs') loadNotifications();
+  if (name === 'profile') loadProfile();
+}
+
+// ═══════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════
+function showModal(html) {
+  document.getElementById('modal-container').innerHTML =
+    `<div class="modal-backdrop" onclick="handleBgClick(event)"><div class="modal" style="position:relative">${html}</div></div>`;
+}
+function closeModal() { document.getElementById('modal-container').innerHTML = ''; }
+function handleBgClick(e) { if (e.target.classList.contains('modal-backdrop')) closeModal(); }
+
+// ═══════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════
+function toast(msg, isErr = false) {
+  const wrap = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast' + (isErr ? ' err' : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ═══════════════════════════════════════════
+//  SERVICE WORKER + PWA
+// ═══════════════════════════════════════════
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function show(id) { document.getElementById(id)?.classList.remove('hidden'); }
+function hide(id) { document.getElementById(id)?.classList.add('hidden'); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── BOOT ──
+boot();
+</script>
+</body>
+</html>
