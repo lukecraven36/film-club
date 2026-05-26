@@ -668,6 +668,7 @@ function renderActivePick(pick) {
       </div>
       <div id="home-review-form" style="padding:0 16px 16px;border-top:1px solid var(--border)"></div>
       <div id="home-all-reviews" style="padding:0 16px 16px"></div>
+      <div id="home-cancel-pick" style="padding:0 16px 16px"></div>
     </div>`;
 }
 
@@ -677,6 +678,7 @@ async function loadHomeReviews(pickId) {
   const rws = reviews || [];
   renderHomeReviewForm(pickId, rws);
   renderHomeAllReviews(rws);
+  renderHomeCancelPick(pickId);
 }
 
 function renderHomeReviewForm(pickId, reviews) {
@@ -738,6 +740,25 @@ async function submitHomeReview(pickId) {
     `${currentMember.name} reviewed ${activePick?.movies?.title || 'the film'}`,
     `Score: ${score.toFixed(1)}/10`);
   await loadHomeReviews(pickId);
+}
+
+function renderHomeCancelPick(pickId) {
+  const el = document.getElementById('home-cancel-pick');
+  if (!el || !activePick) return;
+  const canCancel = currentMember?.is_admin || activePick.picker_id === currentMember?.id;
+  if (!canCancel) return;
+  el.innerHTML = `<button class="btn btn-ghost btn-full btn-sm" style="color:var(--red);border:1px solid rgba(201,85,85,.25)" onclick="cancelPick('${pickId}')">✕ Cancel this pick</button>`;
+}
+
+async function cancelPick(pickId) {
+  if (!confirm('Cancel this pick? It will be removed and the rotation stays the same.')) return;
+  // Delete all reviews for this pick first, then delete the pick
+  const { error: revErr } = await sb.from('reviews').delete().eq('pick_id', pickId);
+  if (revErr) return toast('Error: ' + revErr.message, true);
+  const { error: pickErr } = await sb.from('picks').delete().eq('id', pickId);
+  if (pickErr) return toast('Error: ' + pickErr.message, true);
+  toast('Pick cancelled');
+  await loadHome();
 }
 
 async function closeWeek() {
