@@ -1,6 +1,6 @@
 // Film Club Service Worker
-const CACHE = 'filmclub-v1';
-const OFFLINE_ASSETS = ['/', '/index.html'];
+const CACHE = 'filmclub-v2';
+const OFFLINE_ASSETS = ['/film-club/', '/film-club/index.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -17,7 +17,6 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network-first for API calls, cache-first for assets
   if (e.request.url.includes('supabase.co') || e.request.url.includes('fonts.googleapis')) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     return;
@@ -33,16 +32,15 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// Push notifications
 self.addEventListener('push', e => {
   const data = e.data?.json() || {};
   e.waitUntil(
     self.registration.showNotification(data.title || 'Film Club', {
       body: data.body || '',
-      icon: '/icon-192.png',
-      badge: '/icon-96.png',
+      icon: '/film-club/icon-192.png',
+      badge: '/film-club/icon-96.png',
       tag: data.tag || 'filmclub',
-      data: { url: data.url || '/' }
+      data: { url: data.url || '/film-club/' }
     })
   );
 });
@@ -51,10 +49,9 @@ self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cls => {
-      const url = e.notification.data?.url || '/';
       const match = cls.find(c => c.url.includes(self.location.origin) && 'focus' in c);
       if (match) return match.focus();
-      return clients.openWindow(url);
+      return clients.openWindow('/film-club/');
     })
   );
 });
