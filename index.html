@@ -949,7 +949,7 @@ async function openMovieDetail(pickId) {
           ${rev ? `<span class="gold bold" style="font-size:18px">${Number(rev.score).toFixed(1)}</span>` : '<span class="dim small">No review</span>'}
         </div>
         ${rev?.review_text ? `<div class="small dim" style="margin-top:4px;line-height:1.55">${esc(rev.review_text)}</div>` : ''}
-        ${canEdit ? `<button class="btn btn-ghost btn-sm" style="margin-top:6px;font-size:12px;color:var(--text2)" onclick="openEditReview('${pickId}','${m.id}','${rev?.id||''}',${rev?Number(rev.score):7},${JSON.stringify(rev?.review_text||'').replace(/'/g,"&#39;")})">✏️ ${rev?'Edit':'Add'} review</button>` : ''}
+        ${canEdit ? `<button class="btn btn-ghost btn-sm" style="margin-top:6px;font-size:12px;color:var(--text2)" onclick="openEditReviewSafe('${pickId}','${m.id}',${rev?Number(rev.score):7})">✏️ ${rev?'Edit':'Add'} review</button>` : ''}
       </div>
     </div>`;
   });
@@ -961,22 +961,38 @@ async function openMovieDetail(pickId) {
 }
 
 function openEditReview(pickId, memberId, revId, currentScore, currentText) {
+  showEditReviewModal(pickId, memberId, currentScore, currentText);
+}
+
+async function openEditReviewSafe(pickId, memberId, currentScore) {
+  // Fetch review text fresh from DB to avoid HTML escaping issues
+  const { data } = await sb.from('reviews')
+    .select('review_text, score')
+    .eq('pick_id', pickId).eq('member_id', memberId).maybeSingle();
+  const score = data ? Number(data.score) : currentScore;
+  const text = data?.review_text || '';
+  showEditReviewModal(pickId, memberId, score, text);
+}
+
+function showEditReviewModal(pickId, memberId, currentScore, currentText) {
+  const score = Number(currentScore) || 7;
   showModal(`
-    <div class="modal-handle"></div>
     <div class="modal-title">Edit Review</div>
     <div class="flex between items-center" style="margin-bottom:8px">
       <span class="small dim">Score</span>
-      <span class="score-big" id="edit-score-disp">${Number(currentScore).toFixed(1)}</span>
+      <span class="score-big" id="edit-score-disp">${score.toFixed(1)}</span>
     </div>
-    <input type="range" min="0" max="10" step="0.5" value="${currentScore}"
+    <input type="range" min="0" max="10" step="0.5" value="${score}"
       oninput="document.getElementById('edit-score-disp').textContent=parseFloat(this.value).toFixed(1)" id="edit-score-range">
     <div style="margin-top:14px">
-      <textarea id="edit-review-text" rows="4" placeholder="Written review (optional)">${esc(currentText)}</textarea>
+      <textarea id="edit-review-text" rows="4" placeholder="Written review (optional)"></textarea>
     </div>
     <div class="flex gap1" style="margin-top:16px">
       <button class="btn btn-surface flex1" onclick="closeModal()">Cancel</button>
       <button class="btn btn-gold" style="flex:2" onclick="saveEditedReview('${pickId}','${memberId}')">Save</button>
     </div>`);
+  // Set textarea value via JS to avoid any HTML escaping issues
+  document.getElementById('edit-review-text').value = currentText || '';
 }
 
 async function saveEditedReview(pickId, memberId) {
