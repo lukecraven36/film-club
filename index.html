@@ -1299,11 +1299,9 @@ function goScreen(name) {
 //  MODAL
 // ═══════════════════════════════════════════
 function showModal(html) {
-  const closeBar = `<div style="position:sticky;top:0;z-index:20;display:flex;justify-content:flex-end;margin:-20px -20px 0;padding:10px 12px 8px;background:var(--surface);border-bottom:1px solid var(--border);border-radius:20px 20px 0 0">
-    <button onclick="closeModal()" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:13px;font-weight:600;font-family:Outfit,sans-serif;cursor:pointer">✕ Close</button>
-  </div>`;
+  const closeBtn = `<button onclick="closeModal()" style="position:fixed;bottom:calc(env(safe-area-inset-bottom) + 16px);left:50%;transform:translateX(-50%);z-index:200;display:flex;align-items:center;gap:6px;padding:12px 28px;border-radius:30px;background:var(--text);border:none;color:var(--bg);font-size:14px;font-weight:700;font-family:Outfit,sans-serif;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.5)">✕ Close</button>`;
   document.getElementById('modal-container').innerHTML =
-    `<div class="modal-backdrop" onclick="handleBgClick(event)"><div class="modal" style="position:relative;padding-top:8px">${closeBar}${html}</div></div>`;
+    `<div class="modal-backdrop" onclick="handleBgClick(event)">${closeBtn}<div class="modal" style="position:relative">${html}</div></div>`;
 }
 function closeModal() { document.getElementById('modal-container').innerHTML = ''; }
 function handleBgClick(e) { if (e.target.classList.contains('modal-backdrop')) closeModal(); }
